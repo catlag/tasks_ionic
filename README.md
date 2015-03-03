@@ -1,1 +1,1 @@
-A simple todo app built with Angular.js
+A simple taks app built with ionic and Angular.js.
