@@ -79,6 +79,11 @@ margin-top: auto;
 	color: grey;
 }
 
+.done{
+	text-decoration: line-through;
+	color: red;
+}
+
 .sidebar{
 	background-color: white;
 	position: fixed;

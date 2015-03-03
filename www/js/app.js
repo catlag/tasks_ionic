@@ -30,11 +30,13 @@
 
 
 
-var app = angular.module('todoApp', ['ionic', 'ui.sortable', 'LocalStorageModule'])
-  .config(['localStorageServiceProvider', function(localStorageServiceProvider){
-    localStorageServiceProvider.setPrefix('ls');
-  }])
-  .factory('Projects', function() {
+var app = angular.module('todoApp', ['ionic'])
+/**
+ * The Projects factory handles saving and loading projects
+ * from local storage, and also lets us save and load the
+ * last active project index.
+ */
+.factory('Projects', function() {
   return {
     all: function() {
       var projectString = window.localStorage['projects'];
@@ -61,86 +63,8 @@ var app = angular.module('todoApp', ['ionic', 'ui.sortable', 'LocalStorageModule
     }
   };
 })
-  .controller('TodoCtrl',['$scope', '$timeout', 'Projects', '$ionicSideMenuDelegate','$ionicModal', 'localStorageService','$filter',
-   function($scope, $timeout, Projects, $ionicSideMenuDelagate, $ionicModal, localStorageService, $filter){
 
-//     if(localStorageService.isSupported) {
-//     console.log("yes");
-//     var storageType = localStorageService.getStorageType();
-//     console.log(storageType);
-//   }
-
-//     // var todosInStore = localStorageService.get('todos');
-
-//     // $scope.todos = todosInStore || [];
-
-//     $scope.$watch('todos', function () {
-//       localStorageService.set('todos', $scope.todos);
-//     }, true);
-
-
-//     $scope.todoSortable = {
-//     // containment : "parent",//Dont let the user drag outside the parent
-//     cursor : "move",//Change the cursor icon on drag
-//     tolerance : "pointer"//Read http://api.jqueryui.com/sortable/#option-tolerance
-//     };
-
-//     $scope.addTodo = function(todo){
-//       todo.editing = false;
-//       todo.isDone = false;
-//       $scope.todos.push(todo);
-//       console.log($scope.todo);
-//       $scope.todo = '';
-
-//     };
-
-//     $scope.doneTodo = function(todo){
-      
-//       if(todo.isDone === false){
-//         todo.isDone = true;
-//         console.log(todo);
-//       } else {
-//         todo.isDone = false;
-//         console.log(todo);
-//       }
-
-//     };
-
-//     $scope.deleteTodo = function(index){
-//       $scope.todos.splice(index,1);
-
-//     };
-
-//     $scope.clearTodo = function(){
-//       $scope.todos = [];
-//     };
-
-//     $scope.edit = function(){
-//       console.log("hello!");
-//     };
-
-//    $scope.editTodo = function (todo) {
-//     console.log("Editing");
-//         todo.editing = true;
-//     };
-
-//     $scope.doneEditing = function (todo) {
-//       var found = $filter('getByEditable')($scope.todos);
-//       found.name = todo.name;
-//       todo.editing = false;
-
-//     };
-
-
-// $scope.launch = function(){
-//   dlg = $dialogs.confirm('Please Confirm','Is this awesome or what?');
-//         dlg.result.then(function(btn){
-//           $scope.confirmed = 'You thought this quite awesome!';
-//         },function(btn){
-//           $scope.confirmed = 'Shame on you for not thinking this is awesome!';
-//         });
-// };
-
+.controller('TodoCtrl', ['$scope', '$timeout', '$ionicModal', 'Projects', '$ionicSideMenuDelegate', '$filter', function($scope, $timeout, $ionicModal, Projects, $ionicSideMenuDelegate, $filter) {
 
   // A utility function for creating a new project
   // with the given projectTitle
@@ -149,7 +73,7 @@ var app = angular.module('todoApp', ['ionic', 'ui.sortable', 'LocalStorageModule
     $scope.projects.push(newProject);
     Projects.save($scope.projects);
     $scope.selectProject(newProject, $scope.projects.length-1);
-  }
+  };
 
 
   // Load or initialize projects
@@ -180,12 +104,20 @@ var app = angular.module('todoApp', ['ionic', 'ui.sortable', 'LocalStorageModule
     scope: $scope
   });
 
+    $ionicModal.fromTemplateUrl('edit-task.html', function(modal) {
+    $scope.editModal = modal;
+  }, {
+    scope: $scope
+  });
+
   $scope.createTask = function(task) {
     if(!$scope.activeProject || !task) {
       return;
     }
     $scope.activeProject.tasks.push({
-      title: task.title
+      title: task.title,
+      editing: false,
+      isDone: false
     });
     $scope.taskModal.hide();
 
@@ -208,6 +140,38 @@ var app = angular.module('todoApp', ['ionic', 'ui.sortable', 'LocalStorageModule
   };
 
 
+
+  $scope.editTask = function (task) {
+    console.log("Editing");
+    console.log(task);
+        task.editing = true;
+        $scope.editModal.show();
+    };
+
+    $scope.doneEditing = function (task) {
+      console.log(task)
+      var found = $filter('getByEditable')($scope.activeProject.tasks);
+      found.title = task.title;
+      task.editing = false;
+      $scope.editModal.hide();
+};
+
+    $scope.doneTask = function(task){
+      console.log(task);
+      if(task.isDone === false){
+        task.isDone = true;
+        console.log(task);
+      } else {
+        task.isDone = false;
+        console.log(task);
+      }
+
+    };
+
+    $scope.closeEditTask = function() {
+    $scope.editModal.hide();
+  };
+
   // Try to create the first project, make sure to defer
   // this by using $timeout so everything is initialized
   // properly
@@ -223,14 +187,7 @@ var app = angular.module('todoApp', ['ionic', 'ui.sortable', 'LocalStorageModule
     }
   });
 
-
-        
 }]);
-// .run(['$templateCache',function($templateCache){
-//   $templateCache.put('/dialogs/whatsyourname.html','<div class="modal"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h4 class="modal-title"><span class="glyphicon glyphicon-star"></span> User\'s Name</h4></div><div class="modal-body"><ng-form name="nameDialog" novalidate role="form"><div class="form-group input-group-lg" ng-class="{true: \'has-error\'}[nameDialog.username.$dirty && nameDialog.username.$invalid]"><label class="control-label" for="username">Name:</label><input type="text" class="form-control" name="username" id="username" ng-model="user.name" ng-keyup="hitEnter($event)" required><span class="help-block">Enter your full name, first &amp; last.</span></div></ng-form></div><div class="modal-footer"><button type="button" class="btn btn-default" ng-click="cancel()">Cancel</button><button type="button" class="btn btn-primary" ng-click="save()" ng-disabled="(nameDialog.$dirty && nameDialog.$invalid) || nameDialog.$pristine">Save</button></div></div></div></div>');
-// }]);
-
-
 
 
 
