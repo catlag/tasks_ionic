@@ -1,1 +1,1 @@
-A simple taks app built with ionic and Angular.js.
+A simple task app built with ionic and Angular.js.
